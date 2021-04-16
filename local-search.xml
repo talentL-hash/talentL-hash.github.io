@@ -4,6 +4,19 @@
   
   
   <entry>
+    <title>Hyperledger Fabric/1.set up and begin/1.set up and begin</title>
+    <link href="/2021/04/16/Hyperledger%20Fabric/1.set%20up%20and%20begin/1.set%20up%20and%20begin/"/>
+    <url>/2021/04/16/Hyperledger%20Fabric/1.set%20up%20and%20begin/1.set%20up%20and%20begin/</url>
+    
+    <content type="html"><![CDATA[<p>I have chose <code>go mod</code> to manage my package dependence. My project name is <code>ASRchain</code>.</p><h1 id="Step-1-init"><a href="#Step-1-init" class="headerlink" title="Step 1 init"></a>Step 1 init</h1><p>First, I make a directory called <code>ASRchain</code> and then init in it use the command below:</p><pre><code class="hljs shell"><span class="hljs-meta">ASRchain$</span><span class="bash"> go mod init ASRchain</span></code></pre><h1 id="Step-2-Set-proxy-and-GO111MODULE"><a href="#Step-2-Set-proxy-and-GO111MODULE" class="headerlink" title="Step 2 Set proxy and GO111MODULE"></a>Step 2 Set proxy and GO111MODULE</h1><pre><code class="hljs vim">ASRchain$ <span class="hljs-keyword">go</span> env -<span class="hljs-keyword">w</span> GOPROXY=http<span class="hljs-variable">s:</span>//goproxy.<span class="hljs-keyword">cn</span>,directASRchain$ <span class="hljs-keyword">go</span> env -<span class="hljs-keyword">w</span> GO111MODULE=<span class="hljs-keyword">on</span></code></pre><blockquote><p>GO111MODULE 有三个值：off, on和auto（默认值）。</p><p>GO111MODULE=off，go命令行将不会支持module功能，寻找依赖包的方式将会沿用旧版本那种通过vendor目录或者GOPATH模式来查找。<br> GO111MODULE=on，go命令行会使用modules，而一点也不会去GOPATH目录下查找。<br> GO111MODULE=auto，默认值，go命令行将会根据当前目录来决定是否启用module功能。这种情况下可以分为两种情形：</p><pre><code class="hljs go">当前目录在GOPATH/src之外且该目录包含<span class="hljs-keyword">go</span>.mod文件当前文件在包含<span class="hljs-keyword">go</span>.mod文件的目录下面。</code></pre><p>当modules功能启用时，依赖包的存放位置变更为$GOPATH/pkg，允许同一个package多个版本并存，且多个项目可以共享缓存的 module</p><p><a href="https://www.jianshu.com/p/760c97ff644c" target="_blank" rel="noopener">https://www.jianshu.com/p/760c97ff644c</a> (go mod使用)</p></blockquote><h1 id="Step-3-set-GOPATH"><a href="#Step-3-set-GOPATH" class="headerlink" title="Step 3 set GOPATH"></a>Step 3 set GOPATH</h1><p>This is a tricky one. </p><p><code>$GOPATH/pkg</code> is where go mod keep all packages and <code>$GOPATH</code> directory should contain no <code>src/</code> directory in it. Or you will get <code>$GOPATH/go.mod exists but should not</code> error.</p><p><a href="https://github.com/golang/go/issues/38896" target="_blank" rel="noopener">https://github.com/golang/go/issues/38896</a></p><ul><li>vim /etc/profile and add <ul><li>export GOPATH=/mnt/path/to/store</li></ul></li><li>source /etc/profile</li></ul><h1 id="Step-4-play-around"><a href="#Step-4-play-around" class="headerlink" title="Step 4 play around"></a>Step 4 play around</h1><p>You can go into any directory below the project.And run <code>go test</code>.</p><p>In the test file (named <code>xxx_test.go</code>), you can use <code>&quot;ASRchain/src/common&quot;</code> to import other local package.</p><p>Finally, you can get a directory tree like this.</p><p>![ASRchain dictionary tree](ASRchain dictionary tree.png)</p>]]></content>
+    
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>hexo博客/hexo博客命令</title>
     <link href="/2021/04/16/hexo%E5%8D%9A%E5%AE%A2/hexo%E5%8D%9A%E5%AE%A2%E5%91%BD%E4%BB%A4/"/>
     <url>/2021/04/16/hexo%E5%8D%9A%E5%AE%A2/hexo%E5%8D%9A%E5%AE%A2%E5%91%BD%E4%BB%A4/</url>
