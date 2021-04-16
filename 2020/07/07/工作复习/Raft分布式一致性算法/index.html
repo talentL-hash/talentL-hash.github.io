@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  <title>工作复习/Raft分布式一致性算法 - Hexo</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+  
+
+  
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_yg9cfy8wd6.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script  src="/js/utils.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>talentL-hash</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+  <div class="mt-3 post-meta">
+    <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+    <time datetime="2020-07-07 19:04">
+      2020年7月7日 晚上
+    </time>
+  </div>
+
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      3.7k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      39
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>参考：</p>
+<p><a href="https://www.cnblogs.com/mokafamily/p/11303534.html" target="_blank" rel="noopener">https://www.cnblogs.com/mokafamily/p/11303534.html</a></p>
+<p><a href="https://www.jianshu.com/p/ee7646c0f4cf#" target="_blank" rel="noopener">https://www.jianshu.com/p/ee7646c0f4cf#</a></p>
+<p>分布式系统中各个部分保持数据一致，就是分布式一致性问题。</p>
+<h1 id="CAP定理"><a href="#CAP定理" class="headerlink" title="CAP定理"></a>CAP定理</h1><p>CAP定理证明了分布式系统只能同时满足一致性（Consistency）、可用性（Availability）和分区容错性（Partition tolerance）这三项中的两项。</p>
+<ul>
+<li>一致性（Consistency）：指的就是整个集群的所有节点数据保持一致</li>
+<li>可用性（Availability）：在数据同步过程中，集群是否是可用状态</li>
+<li>分区容忍性（Partition tolerance）：是否能够容忍网络分区的发生</li>
+</ul>
+<p>在所有分布式系统中，P几乎都是不可抛弃的，选择只剩下AP和CP。</p>
+<p>但是，如果我们有一个single master+multiple slaves的mysql数据库，当leader不可用时，用户则不能进行写入，也就丧失了A属性，但由于MySQL是通过binlog异步同步数据库的，用户也有可能读到的是旧数据，所以说该系统也许既不满足A也不满足C，仅仅满足了P属性。</p>
+<h1 id="一致性级别"><a href="#一致性级别" class="headerlink" title="一致性级别"></a>一致性级别</h1><h2 id="强一致性（线性一致性）"><a href="#强一致性（线性一致性）" class="headerlink" title="强一致性（线性一致性）"></a>强一致性（线性一致性）</h2><p>任何时间访问任何存储节点都是最新的值，客户端操作一个强一致性的数据库，感觉自己在操作一个单机数据库。</p>
+<h2 id="弱一致性"><a href="#弱一致性" class="headerlink" title="弱一致性"></a>弱一致性</h2><p>不对一致性进行保证。某些系统对一致性的要求不高，从而舍弃强一致性策略带来的性能与可用性消耗。</p>
+<h2 id="最终一致性"><a href="#最终一致性" class="headerlink" title="最终一致性"></a>最终一致性</h2><p>可理解为弱一致性的一种，在写入后仍可能得到旧值。</p>
+<p>最终一致性的核心是保证同步的请求不会丢失，在请求到达时，节点的状态变为最新的状态，而不考虑请求传输时的不一致窗口。</p>
+<h1 id="Raft算法"><a href="#Raft算法" class="headerlink" title="Raft算法"></a>Raft算法</h1><p>raft是强一致性算法。强一致性强调的是强一致性读，既不会读到过期的结果。但并不要求将每个写请求复写到集群中的每个节点上。</p>
+<h2 id="目标：复制的Log"><a href="#目标：复制的Log" class="headerlink" title="目标：复制的Log"></a>目标：复制的Log</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-decc26c5a3f6da23.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>Raft总体目标是将Log完全一致地复制到集群中的所有机器上。</p>
+<p>State Machine是一个具体的应用程序，能接收请求，输出结果。不是所有command都被执行，只有被“安全地复制”的command才允许执行（复制持久化，复制到集群中的大多数machine）。不同server上的相同的State Machine按照完全一样的顺序执行Log中的相同command，必定输出相同的结果。</p>
+<p>Consensus Module一致性模块，管理Log，确保被合理地复制，并决定什么时候将Log中的command提交给State Machine执行。</p>
+<p>允许网络中断、消息丢失、消息延迟、消息传递乱序、网络分化等，但是不包括Byzantine failures（拜占庭将军问题，指的是恶意篡改数据这类行为）。</p>
+<h2 id="保持一致性的方法"><a href="#保持一致性的方法" class="headerlink" title="保持一致性的方法"></a>保持一致性的方法</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-354db659cba08d14.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>实现一致性算法有两种可能方式：</p>
+<p>1）第一种叫对称式，或无leader：这种方式中所有server的角色完全一样，权利也一样，在任意时刻的行为也基本一样，所有server都是对等的；客户端可以请求任意一台server，将command写入log中，并复制到其他server（其实就是完全平等制、无政府主义）；</p>
+<p>2）第二种叫非对称式，或leader-based：在任意时间各个server都是不平等的，某个时刻只有一个server是leader，管理集群中的所有操作；其他server都是被统治的，只能简单按照leader的旨意干活；在这类系统中，客户端只能与leader通信，也只有leader能与其他server交流（其实就是专制独裁统治，只有一个leader，可以为所欲为，其他所有人都必须听命于leader，只有leader能对外交流）；</p>
+<p>raft采用的就是第二种leader-based的方式，并且把一致性问题分解为两个不同问题：一是在有leader的情况下集群如何正常运作，二是leader挂掉之后如何选举更换leader。raft采用的这种leader-based方式的优势是使得正常运作过程非常简单，因为你不需要担心多个leader同时指挥导致的冲突，记住只有一个leader，leader可以为所欲为；raft算法的所有复杂性其实都来自于leader变更，这是因为旧leader忽然挂掉，可能导致整个系统处于不一致的状态，新leader上任后必须收拾残局。（后面大家会有切身体会，raft正常的运行过程非常简单，但是leader变更过程非常复杂）</p>
+<h2 id="Raft总体"><a href="#Raft总体" class="headerlink" title="Raft总体"></a>Raft总体</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-c3ecc214a4eaf58b.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>raft讲解提纲，共6个部分：</p>
+<p>1、leader选举：如何从多个server中挑选一台作为leader；当leader挂掉之后，如何感知到，并挑选出新的leader来替换旧leader；</p>
+<p>2、正常运行（最基本的log复制过程）：leader从客户端收到请求后如何将log复制到其他机器；这其实是整个raft算法中最简单的部分；</p>
+<p>3、leader变更过程中的安全性和一致性：leader变更是raft中最难的，也是最关键的；首先会讲下safety到底意味着什么，以及如何保证safety；接着讲新leader上任后如何处理log，使得整个系统恢复一致性状态；</p>
+<p>4、neutralize 旧leader：这是leader变更中的另一个问题，就是旧leader并没有真的死掉，死灰复燃，重新恢复之后，我们该如何处理；</p>
+<p>5、客户端交互：客户端如何与整个系统交互？关键点是请求过程中server挂掉了client怎么办？如何实现linearizable semantics（线性化语义），即每个客户端命令只能执行一次（once and exactly once，其实就是防止出现多次执行出问题，类似于幂等性概念）;</p>
+<p>6、配置变更：如何在集群中新增、或删除机器？</p>
+<h2 id="Server状态分类（三种）"><a href="#Server状态分类（三种）" class="headerlink" title="Server状态分类（三种）"></a>Server状态分类（三种）</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-38c87cba8925b8dc.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img">Server的三种状态Follower、Candidate、Leader。</p>
+<p>正常情况下的集群状态应该是：1个leader，其他所有都是follower。</p>
+<h2 id="任期Terms"><a href="#任期Terms" class="headerlink" title="任期Terms"></a>任期Terms</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-18e8a85eccf45f03.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>时间被划分成一个个的term（这里的term，还有zookeeper中的epoch，都是同一个意思，指的就是任期、时期、年代；指的是某一个leader的统治时期），每个term都有一个number，这个number必须单向递增且从未被用过。</p>
+<p>旧leader一挂，就进入新term；新term一开始必须进行选举，选举成功则leader登基开始执政；选举不成功则立即进入新的term，开始新的一轮。</p>
+<p>current term value用来识别过期信息，比如某个认为当前term是2的server跟另外一个认为当前term是3的server进行通讯，我们就知道前一个server的信息是过时的。其理念类似于抢夺式锁，用于解决不同term信息的冲突。总是采用最新的term信息。</p>
+<h2 id="Raft协议总结（各个server之间交互）"><a href="#Raft协议总结（各个server之间交互）" class="headerlink" title="Raft协议总结（各个server之间交互）"></a>Raft协议总结（各个server之间交互）</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-ad285652dcf26229.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>简要说下图中展示的几点：</p>
+<p>1）各个角色的行为过程：参见follower、candidate和leader下面的描述；</p>
+<p>2）需要持久化到磁盘上的状态数据（Persistent Satate）、log中每条数据的格式；</p>
+<p>3）各个server之间如何交互：raft中所有server之间的通信都是RPC调用，并且只有两种类型的RPC调用：第一种是RequestVote，用于选举leader；第二种是AppendEntries，用于normal operations中leader向其他机器复制log；</p>
+<h2 id="心跳Heartbeats和Timeouts"><a href="#心跳Heartbeats和Timeouts" class="headerlink" title="心跳Heartbeats和Timeouts"></a>心跳Heartbeats和Timeouts</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-1ccec03fb937fb70.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>刚开始没有follower，所有server等待elecctionTimeout进行新一轮选举。</p>
+<p>leader保持自己的权威，必须不断发心跳。</p>
+<h2 id="选举基础和特性"><a href="#选举基础和特性" class="headerlink" title="选举基础和特性"></a>选举基础和特性</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-1b9ff43d36e72a02.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4788617-4bbf50f75cbfb5d0.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>选举过程中必须保证两大特性（图中cont’d是continued的意思，表示接着上一个slide继续）：</p>
+<p>1）safety：安全性，意思是说在任意一个给定的term内，最多只允许一个server获胜成为leader；为了保证这一点，需要两个条件：</p>
+<p>a.任意一个server在一个term内只能投出一票；一旦已经投给了一个candidate，它必须拒绝其他candidate的投票请求；其实server根本不在意把票投给谁，它只会把票投给最先到请求到它的candidate；为了保证这一点，必须把投票信息持久保存到磁盘上，这样可以保证即使该server投完票后宕机，稍后又立即重启了，也不会在同一个term内给第二个candidate投票了。</p>
+<p>b.只有获得大多数投票才能获胜</p>
+<p>结合a,b：一个server在同一个term内只能投一票，一个candidate为了获胜必须获得过半投票，显而易见，在同一个term内不可能有两个candidate同时当选；一旦有candidate获得大多数投票，其他candidate不可能再获得过半投票了；不同term内，当然可以有不同的candidate获胜，但同一个term内，只可能有一个获胜；</p>
+<p>2）liveness：为了保证系统能向前运行，我们要确保不能一直都是无leader状态，必须要能最终选出一个leader；</p>
+<p>问题的关键就是我们要确保不要总是出现splited vote（投票分散），即我们不要让多个candidate总是同时开始竞选，这很容易使投票分散；同时开始竞选，然后投票分散，无法形成大多数一直，然后等待超时，然后再同时开始竞选，这成了一个恶性循环；</p>
+<p>raft的解决办法很简单，即使得election timeout分散开来，不要让所有server的election timeout都相同，而是在T到2T之间随机选择超时时间（T就是election timeout，这个值通常要比系统中最快的机器的超时时间短）；每个server每次都用随机方法计算出超时时间；通过把timeout分散开来，每次取值不一样，这样不太可能还会出现两个server同时超时然后同时开始竞选的情况；总有机器最先超时，然后有充足时间在其他server也超时之前发起投票、赢得选举；这种办法在T远大于broadcast time（传播时间，指的是server发起投票、收到投票所花时间）的情况下效果尤其明显；</p>
+<p>（点评：<strong>safety其实是保证系统一致性运行的最低要求</strong>，其核心是cannot do something bad，即不能干坏事、不能做错事；<strong>liveness其实是更高要求，意味着不能只是不干坏事，也不能一直不干事</strong>，you must do something good，即必须使得整个系统能良好运转下去；因为如果一直处于无leader状态，其实系统是不能对外提供服务的；liveness本意就是活性、生存性，在java并发编程中也有该概念，定义如A concurrent application’s ability to execute in a timely manner is known as its liveness.总结来说，liveness说的是应用程序运行及时性的能力，核心在于要“及时”执行，即在通常认为的合理时间内要能执行。）</p>
+<h2 id="Log结构"><a href="#Log结构" class="headerlink" title="Log结构"></a>Log结构</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-a5f095511d333f30.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>提醒一点：过半即是提交，这个定义并不精确，后面会稍作修改。（现在你可以暂时认为committed就是指的过半，后面会看到还会加一点额外限制条件，用于解决server变化时候的log一致性问题）</p>
+<h2 id="正常操作"><a href="#正常操作" class="headerlink" title="正常操作"></a>正常操作</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-3eaf041a7415cdac.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>client请求leader-》leader在本地log中写入entry-》leader向所有followers广播entry-》leader收到过半响应，认为已提交-》leader执行对应命令，返回结果-》同时leader向所有followers广播提交信息-》其他follower获知已提交则也执行对应命令。</p>
+<p>最终所有server都会执行该请求，但client不会等到所有server执行完，只需等到leader执行完即可；但执行是有条件的，即log必须复制到过半server上才能开始执行；如果给定时间内仍复制不到过半server，则本次请求失败，客户端必须发起重试；</p>
+<p>注意：有请求进来，leader只需等到大多数机器有响应即可执行命令并返回结果；leader不需要等待所有机器有响应才执行命令，但是leader需要不断发请求给所有机器，以确保最终所有机器都有响应，并执行相同的命令；这是不矛盾的；</p>
+<h2 id="Log一致性"><a href="#Log一致性" class="headerlink" title="Log一致性"></a>Log一致性</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-6a0f5466e72fa39d.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>index和term组合起来唯一标识从开始到index位置的整条log</p>
+<p>只要entry的index和term相同，则其command一定相同</p>
+<h2 id="AppendTntries一致性检查"><a href="#AppendTntries一致性检查" class="headerlink" title="AppendTntries一致性检查"></a>AppendTntries一致性检查</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-ba1715b5e6829473.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>当leader向follower发送AppendEntries RPC请求的时候，除了要发送新的log entry之外，还要额外带上两个值：即新entry的前一个entry的index和term；</p>
+<p>一旦某个follower接收了某条entry，则意味着这个follower的log中从起始位置到这条entry为止的所有entries都跟leader的完全匹配；</p>
+<h2 id="Leader更换"><a href="#Leader更换" class="headerlink" title="Leader更换"></a>Leader更换</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-94834154b4ec024e.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>图中S2成为term7时期的leader后，如果能够与其他所有server通信，那它最终要保证其他所有server的log与它的log相同，这就意味着与之有冲突的log entry必须被清除；后续会详细讲解leader如何进行clean up使得followers的log与之相同；特别强调一下correctness和safety，我们怎样才能确保系统正常运行，确保不丢失重要信息呢？如我们刚才为了保证一致性，丢弃了一些log，我们怎样做才是安全的呢？</p>
+<h2 id="Safety要求"><a href="#Safety要求" class="headerlink" title="Safety要求"></a>Safety要求</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-6ef77d33c8979a2b.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>某个entry已被提交 -&gt; 这条entry必定在后续leader中存在</p>
+<p>为了实现这个安全性目标，我们必须从两方面修正raft算法：</p>
+<p>a. 对leader election增加约束条件：如果某个server的log中缺少某个已提交entry，则不允许这个server当leader；</p>
+<p>b. 必须改变对committed的定义：前面说的已过半即是committed，这是不够的；有时候我们必须延迟committed，直到我们认为安全了才能committed；所谓的安全，就是说我们认为能够保证后续leader有这条entry；</p>
+<p>约束a是排除了某些server当leader，即不含有已提交entry的server不允许当leader；显而易见，只有约束a是不够的，因为a说的只是最低安全性条件，照此条件，有可能一个leader都选不出来；而b是对committed条件的加强，意味着对committed施加更严苛的条件，也意味着给更多server成为leader的机会，即能够保证最终能选出leader；后续会有相应case</p>
+<h2 id="选取最好的Leader"><a href="#选取最好的Leader" class="headerlink" title="选取最好的Leader"></a>选取最好的Leader</h2><p><img src="https://upload-images.jianshu.io/upload_images/4788617-e5502e3643d3643d.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>server3宕机，此时不能确定entry5是否committed，因为无法与server3通信。</p>
+<p>挑选最有可能含有所有已提交entry的server做leader，即挑选the best leader! </p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4788617-6fb28858a1ebff5d.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4788617-29c121746e7e7ece.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/960/format/webp" srcset="/img/loading.gif" alt="img"></p>
+<p>​    </p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/07/24/%E5%B7%A5%E4%BD%9C%E5%A4%8D%E4%B9%A0/BGP/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">工作复习/BGP</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2020/07/07/%E5%B7%A5%E4%BD%9C%E5%A4%8D%E4%B9%A0/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95/">
+                        <span class="hidden-mobile">工作复习/一致性哈希算法</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/main.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: 'article.markdown-body',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "工作复习/Raft分布式一致性算法&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
